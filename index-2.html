@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=0.9, user-scalable=yes">
+<title>YATZY</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='15' fill='%23ffe94a' stroke='%230a0a0a' stroke-width='6'/><circle cx='30' cy='30' r='9' fill='%230a0a0a'/><circle cx='70' cy='30' r='9' fill='%230a0a0a'/><circle cx='50' cy='50' r='9' fill='%230a0a0a'/><circle cx='30' cy='70' r='9' fill='%230a0a0a'/><circle cx='70' cy='70' r='9' fill='%230a0a0a'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #fffef5;
+    --yellow: #ffe94a;
+    --pink: #ff3d6b;
+    --lime: #c8ff57;
+    --blue: #2563ff;
+    --orange: #ff7b2e;
+    --shadow: 4px 4px 0px var(--black);
+    --shadow-xl: 8px 8px 0px var(--black);
+    --border: 2.5px solid var(--black);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--white);
+    background-image: radial-gradient(var(--black) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: 'Space Mono', monospace;
+    color: var(--black);
+    padding: 2.5rem 1.5rem 5rem;
+  }
+
+  header {
+    max-width: 980px;
+    margin: 0 auto 2.5rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .header-title-block { display: flex; flex-direction: column; }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 14vw, 9rem);
+    line-height: 0.88;
+    background: var(--yellow);
+    padding: 0.08em 0.22em 0.04em;
+    border: var(--border);
+    box-shadow: var(--shadow-xl);
+    display: inline-block;
+  }
+
+  .header-sub {
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 700;
+    background: var(--lime);
+    padding: 0.3rem 0.6rem;
+    border: var(--border);
+    box-shadow: var(--shadow);
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 980px;
+    margin: 0 auto 1.75rem;
+  }
+
+  .player-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.08em;
+    background: var(--black);
+    color: var(--yellow);
+    padding: 0.2rem 0.75rem;
+    border: var(--border);
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: var(--border);
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.07s, box-shadow 0.07s;
+  }
+
+  .btn:hover  { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--black); }
+  .btn:active { transform: translate(4px,4px);   box-shadow: 0px 0px 0 var(--black); }
+  .btn:disabled { opacity: 0.32; cursor: not-allowed; transform: none; box-shadow: var(--shadow); }
+
+  .btn-add    { background: var(--lime); }
+  .btn-remove { background: var(--pink); color: var(--white); }
+  .btn-reset  { background: var(--orange); color: var(--white); }
+  .btn-finish { background: var(--blue); color: var(--white); }
+  .btn-danger { background: var(--pink); color: var(--white); }
+
+  .table-wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    border: var(--border);
+    box-shadow: var(--shadow-xl);
+    overflow-x: auto;
+    background: var(--white);
+    animation: slideDown 0.25s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  table { border-collapse: collapse; width: 100%; min-width: 420px; }
+
+  thead th {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    padding: 0.7rem 0.5rem 0.5rem;
+    border-right: 2px solid #2a2a2a;
+    text-align: center;
+  }
+
+  thead th:first-child {
+    text-align: left;
+    padding-left: 1rem;
+    width: 180px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: #888;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .player-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #555;
+    color: var(--yellow);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    width: 100%;
+    max-width: 120px;
+    padding: 0.15rem 0.2rem;
+    outline: none;
+    transition: border-color 0.1s, background 0.1s;
+  }
+
+  .player-name-input:focus {
+    border-bottom: 2px solid var(--yellow);
+    background: rgba(255,233,74,0.1);
+  }
+
+  .section-header td {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
+    padding: 0.5rem 1rem;
+    background: var(--yellow);
+    border-top: var(--border);
+    border-bottom: var(--border);
+  }
+
+  .section-lower td { background: var(--lime); }
+
+  tbody tr td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1.5px solid #e2e1d8;
+    border-right: 1.5px solid #e2e1d8;
+    font-size: 0.73rem;
+  }
+
+  tbody tr:nth-child(even) td { background: #f9f8ef; }
+  tbody tr:hover td { background: #fff9cc; }
+
+  tbody td:first-child {
+    padding-left: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    background: inherit;
+  }
+
+  td.score-cell { text-align: center; min-width: 90px; }
+
+  .input-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+
+  .score-input {
+    background: var(--white);
+    border: 2px solid var(--black);
+    color: var(--black);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    width: 60px;
+    padding: 0.28rem 0.2rem;
+    outline: none;
+    box-shadow: 2px 2px 0 var(--black);
+    transition: box-shadow 0.07s, transform 0.07s, border-color 0.07s;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .score-input::-webkit-outer-spin-button,
+  .score-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .score-input:focus {
+    box-shadow: 4px 4px 0 var(--blue);
+    border-color: var(--blue);
+    transform: translate(-1px,-1px);
+    background: #eef3ff;
+  }
+
+  .score-input.filled   { border-color: var(--blue);  box-shadow: 2px 2px 0 var(--blue);  background: #eef3ff; color: var(--blue); }
+  .score-input.at-max   { border-color: #1a8a3a; box-shadow: 2px 2px 0 #1a8a3a; background: #f0fff5; color: #1a6a2a; }
+  .score-input.over-max { border-color: var(--pink);  box-shadow: 2px 2px 0 var(--pink);  background: #fff0f3; color: var(--pink); animation: shake 0.25s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-3px); }
+    75%      { transform: translateX(3px); }
+  }
+
+  .max-label { font-size: 0.52rem; color: #bbb; letter-spacing: 0.05em; line-height: 1; }
+
+  .checkbox-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+  .score-checkbox { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  .checkbox-box {
+    width: 36px; height: 36px;
+    border: 2.5px solid var(--black);
+    background: var(--white);
+    box-shadow: 2px 2px 0 var(--black);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    transition: background 0.1s, box-shadow 0.07s, transform 0.07s;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .checkbox-wrap:hover .checkbox-box { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--black); }
+  .checkbox-wrap:active .checkbox-box { transform: translate(2px,2px); box-shadow: 0 0 0 var(--black); }
+  .score-checkbox:checked + .checkbox-box { background: var(--lime); border-color: #1a6a2a; box-shadow: 2px 2px 0 #1a6a2a; }
+  .checkbox-pts { font-size: 0.58rem; color: #bbb; letter-spacing: 0.05em; font-weight: 700; }
+  .score-checkbox:checked ~ .checkbox-pts { color: #1a8a3a; }
+
+  tr.calc-row td { background: #f1f0e6 !important; }
+
+  tr.total-row td { background: var(--black) !important; border-bottom: var(--border) !important; border-top: var(--border) !important; padding: 0.55rem 0.5rem; }
+  tr.total-row td:first-child { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.15em; color: var(--yellow); background: var(--black) !important; }
+  .total-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--yellow); }
+
+  .missing-ok   { color: #1a8a3a; font-weight: 700; font-size: 0.78rem; }
+  .missing-need { color: var(--pink); font-weight: 700; font-size: 0.78rem; }
+
+  tr.bonus-row td { background: #efffdb !important; border-bottom: var(--border) !important; }
+  .bonus-yes { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; color: #1a6a2a; background: var(--lime); padding: 0.1rem 0.5rem; border: 1.5px solid var(--black); box-shadow: 2px 2px 0 var(--black); display: inline-block; }
+  .bonus-no  { font-size: 0.78rem; color: #aaa; }
+
+  tr.grand-total-row td { background: var(--pink) !important; border-top: var(--border) !important; padding: 0.8rem 0.5rem; }
+  tr.grand-total-row td:first-child { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.2em; color: var(--white); background: var(--pink) !important; }
+  .grand-total-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--white); text-shadow: 2px 2px 0 rgba(0,0,0,0.35); }
+
+  .hint { font-size: 0.6rem; color: #aaa; margin-left: 5px; font-weight: 400; }
+
+  /* High scores */
+  .hs-panel {
+    max-width: 980px;
+    margin: 2rem auto 0;
+    border: var(--border);
+    box-shadow: var(--shadow-xl);
+    background: var(--black);
+    overflow: hidden;
+  }
+
+  .hs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1rem;
+    background: var(--yellow);
+    border-bottom: var(--border);
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .hs-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.2em; }
+  .hs-note { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .hs-body { padding: 0.75rem 1rem 1rem; }
+  .hs-empty { font-size: 0.7rem; color: #666; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.5rem 0; }
+  .hs-list { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .hs-entry { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 0.75rem; background: #111; border: 1.5px solid #2a2a2a; }
+  .hs-entry.hs-gold   { border-color: var(--yellow); background: #1a1600; }
+  .hs-entry.hs-silver { border-color: #aaa;          background: #131313; }
+  .hs-entry.hs-bronze { border-color: var(--orange); background: #140d00; }
+
+  .hs-rank { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: #444; min-width: 24px; text-align: center; }
+  .hs-gold   .hs-rank { color: var(--yellow); }
+  .hs-silver .hs-rank { color: #ccc; }
+  .hs-bronze .hs-rank { color: var(--orange); }
+
+  .hs-name  { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.08em; color: var(--white); flex: 1; }
+  .hs-score { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--white); }
+  .hs-gold   .hs-score { color: var(--yellow); }
+  .hs-silver .hs-score { color: #ddd; }
+  .hs-bronze .hs-score { color: var(--orange); }
+  .hs-date { font-size: 0.58rem; color: #555; min-width: 70px; text-align: right; }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,10,0.72);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--white);
+    border: var(--border);
+    box-shadow: var(--shadow-xl);
+    padding: 2.2rem 2.5rem;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    animation: popIn 0.15s ease;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.9) translate(4px,4px); }
+    to   { transform: scale(1) translate(0,0); }
+  }
+
+  .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.1em; background: var(--orange); display: inline-block; padding: 0.05em 0.35em; border: var(--border); box-shadow: var(--shadow); margin-bottom: 1rem; }
+  .modal h2.blue-title { background: var(--blue); color: var(--white); }
+  .modal p { font-size: 0.72rem; line-height: 1.8; margin-bottom: 1.2rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .modal-btns { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+  .btn-confirm-reset { background: var(--pink); color: var(--white); }
+  .btn-cancel        { background: var(--white); }
+
+  .finish-results { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem; text-align: left; }
+  .finish-entry { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; border: 2px solid var(--black); box-shadow: 2px 2px 0 var(--black); }
+  .finish-entry.winner { background: var(--yellow); }
+  .finish-player { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.08em; }
+  .finish-score  { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; }
+
+  .new-record-badge { display: inline-block; background: var(--lime); border: 1.5px solid var(--black); box-shadow: 2px 2px 0 var(--black); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.15rem 0.4rem; margin-left: 0.4rem; vertical-align: middle; }
+
+  @media (max-width: 1024px) {
+    h1 { font-size: 5rem; }
+    body { padding: 1.5rem 1rem 3rem; }
+    .score-input { width: 50px; font-size: 0.8rem; }
+    td.score-cell { min-width: 70px; }
+    thead th:first-child { width: 140px; }
+    tbody td:first-child { font-size: 0.62rem; }
+    .grand-total-value { font-size: 1.5rem; }
+    .total-value { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title-block">
+    <h1>YATZY</h1>
+    <span class="header-sub">⚄ Pistelasku — Score Tracker</span>
+  </div>
+</header>
+
+<div class="controls">
+  <button class="btn btn-add"    id="btnAdd"    onclick="addPlayer()">+</button>
+  <button class="btn btn-remove" id="btnRemove" onclick="removePlayer()">−</button>
+  <span class="player-badge" id="playerCountBadge">3 PLAYERS</span>
+  <div style="width:100%"></div>
+  <button class="btn btn-reset"  onclick="showModal('modalReset')">↺ NOLLAA</button>
+  <button class="btn btn-finish" onclick="showFinishModal()">🏆 PELIN LOPPU</button>
+</div>
+
+<div class="table-wrap">
+  <table id="scoreTable">
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div class="hs-panel">
+  <div class="hs-header">
+    <h2>🏆 ALL-TIME HIGH SCORES</h2>
+    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+      <span class="hs-note">Tallennettu selaimeen</span>
+      <button class="btn btn-danger" style="font-size:0.65rem;padding:0.35rem 0.8rem" onclick="clearHighScores()">✕ TYHJENNÄ</button>
+    </div>
+  </div>
+  <div class="hs-body" id="hsBody"></div>
+</div>
+
+<!-- Reset Modal -->
+<div class="modal-overlay" id="modalReset">
+  <div class="modal">
+    <h2>NOLLAA?</h2>
+    <p>Kaikki pisteet poistetaan.<br>Nimet ja high scores säilyvät.</p>
+    <div class="modal-btns">
+      <button class="btn btn-confirm-reset" onclick="confirmReset()">NOLLAA</button>
+      <button class="btn btn-cancel"        onclick="hideModal('modalReset')">PERUUTA</button>
+    </div>
+  </div>
+</div>
+
+<!-- Finish Modal -->
+<div class="modal-overlay" id="modalFinish">
+  <div class="modal">
+    <h2 class="blue-title">PELI OHI!</h2>
+    <div class="finish-results" id="finishResults"></div>
+    <p style="font-size:0.65rem;margin-bottom:0.8rem">Tallennetaanko tulokset high scores -listaan?</p>
+    <div class="modal-btns">
+      <button class="btn btn-finish" onclick="saveAndReset()">💾 TALLENNA & NOLLAA</button>
+      <button class="btn btn-cancel" onclick="hideModal('modalFinish')">SULJE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MAX_PLAYERS = 6, MIN_PLAYERS = 1;
+const HS_KEY = 'yatzy_highscores';
+const MAX_HS  = 10;
+const CHECKBOX_KEYS = new Set(['smallstr','largestr','yatzy']);
+
+const UPPER = [
+  { key:'ones',   label:'Ykköset',  hint:'max 5',  max:5  },
+  { key:'twos',   label:'Kakkoset', hint:'max 10', max:10 },
+  { key:'threes', label:'Kolmoset', hint:'max 15', max:15 },
+  { key:'fours',  label:'Neloset',  hint:'max 20', max:20 },
+  { key:'fives',  label:'Vitoset',  hint:'max 25', max:25 },
+  { key:'sixes',  label:'Kutoset',  hint:'max 30', max:30 },
+];
+
+const LOWER = [
+  { key:'pair',        label:'Pari',        hint:'max 12', max:12 },
+  { key:'twopairs',    label:'Kaksi paria', hint:'max 22', max:22 },
+  { key:'threeofkind', label:'Kolmoset',    hint:'max 18', max:18 },
+  { key:'fourofkind',  label:'Neloset',     hint:'max 24', max:24 },
+  { key:'smallstr',    label:'Pieni suora', hint:'= 15',   max:15 },
+  { key:'largestr',    label:'Iso suora',   hint:'= 20',   max:20 },
+  { key:'fullhouse',   label:'Täyskäsi',    hint:'max 28', max:28 },
+  { key:'chance',      label:'Sattuma',     hint:'max 30', max:30 },
+  { key:'yatzy',       label:'YATZY!',      hint:'= 50',   max:50 },
+];
+
+const ALL_ROWS = [...UPPER, ...LOWER];
+let state = { players:['PELAAJA 1','PELAAJA 2','PELAAJA 3'], scores:{} };
+
+function initScores() {
+  state.players.forEach(p => {
+    if (!state.scores[p]) state.scores[p] = {};
+    ALL_ROWS.forEach(r => { if (state.scores[p][r.key]===undefined) state.scores[p][r.key]=''; });
+  });
+}
+
+const calcUpper = p => UPPER.reduce((s,r) => s+(parseInt(state.scores[p]?.[r.key])||0), 0);
+const calcBonus = p => calcUpper(p)>=63 ? 50 : 0;
+const calcLower = p => LOWER.reduce((s,r) => s+(parseInt(state.scores[p]?.[r.key])||0), 0);
+const calcGrand = p => calcUpper(p)+calcBonus(p)+calcLower(p);
+
+function renderTable() {
+  document.getElementById('tableHead').innerHTML = `<tr>
+    <th>KATEGORIA</th>
+    ${state.players.map(p=>`<th>
+      <input class="player-name-input" value="${esc(p)}"
+        onchange="rename('${ea(p)}',this.value)"
+        onblur="rename('${ea(p)}',this.value)"
+        placeholder="NIMI"/>
+    </th>`).join('')}
+  </tr>`;
+
+  let rows = '';
+
+  rows += `<tr class="section-header"><td colspan="${state.players.length+1}">⬆ YLÄOSA — UPPER SECTION</td></tr>`;
+  UPPER.forEach(r => {
+    rows += `<tr><td>${r.label}<span class="hint">${r.hint}</span></td>
+      ${state.players.map(p=>numCell(p,r)).join('')}</tr>`;
+  });
+
+  rows += `<tr class="calc-row total-row"><td>VÄLISUMMA</td>
+    ${state.players.map(p=>`<td class="score-cell"><span class="total-value">${calcUpper(p)}</span></td>`).join('')}</tr>`;
+
+  rows += `<tr class="calc-row"><td>PUUTTUU BONUKSEEN</td>
+    ${state.players.map(p=>{
+      const m=Math.max(0,63-calcUpper(p));
+      return `<td class="score-cell"><span class="${m===0?'missing-ok':'missing-need'}">${m===0?'✓ VALMIS!':'-'+m}</span></td>`;
+    }).join('')}</tr>`;
+
+  rows += `<tr class="calc-row bonus-row"><td>BONUS<span class="hint"> ≥63→+50</span></td>
+    ${state.players.map(p=>{
+      const b=calcBonus(p);
+      return `<td class="score-cell">${b?`<span class="bonus-yes">+50</span>`:`<span class="bonus-no">—</span>`}</td>`;
+    }).join('')}</tr>`;
+
+  rows += `<tr class="section-header section-lower"><td colspan="${state.players.length+1}">⬇ ALAOSA — LOWER SECTION</td></tr>`;
+  LOWER.forEach(r => {
+    const fn = CHECKBOX_KEYS.has(r.key) ? checkCell : numCell;
+    rows += `<tr><td>${r.label}<span class="hint">${r.hint}</span></td>
+      ${state.players.map(p=>fn(p,r)).join('')}</tr>`;
+  });
+
+  rows += `<tr class="grand-total-row"><td>YHTEENSÄ</td>
+    ${state.players.map(p=>`<td class="score-cell"><span class="grand-total-value">${calcGrand(p)}</span></td>`).join('')}</tr>`;
+
+  document.getElementById('tableBody').innerHTML = rows;
+  document.getElementById('playerCountBadge').textContent = `${state.players.length} PLAYER${state.players.length!==1?'S':''}`;
+  document.getElementById('btnAdd').disabled    = state.players.length>=MAX_PLAYERS;
+  document.getElementById('btnRemove').disabled = state.players.length<=MIN_PLAYERS;
+}
+
+function numCell(p, r) {
+  const val = state.scores[p]?.[r.key]??'';
+  const num = parseInt(val);
+  const cls = (val!==''&&!isNaN(num)) ? (num>r.max?'over-max':num===r.max?'at-max':'filled') : '';
+  return `<td class="score-cell"><div class="input-wrap">
+    <input class="score-input ${cls}" type="number" min="0" max="${r.max}"
+      value="${val}" oninput="setScore('${ea(p)}','${r.key}',this,${r.max})" placeholder="–"/>
+    <span class="max-label">/ ${r.max}</span>
+  </div></td>`;
+}
+
+function checkCell(p, r) {
+  const checked = parseInt(state.scores[p]?.[r.key])===r.max;
+  const uid = `cb_${ea(p)}_${r.key}`;
+  return `<td class="score-cell">
+    <label class="checkbox-wrap" for="${uid}">
+      <input class="score-checkbox" type="checkbox" id="${uid}"
+        ${checked?'checked':''}
+        onchange="setCheckbox('${ea(p)}','${r.key}',this,${r.max})"/>
+      <span class="checkbox-box">${checked?'✓':''}</span>
+      <span class="checkbox-pts">${checked?r.max+' pts':'0 pts'}</span>
+    </label>
+  </td>`;
+}
+
+function setScore(p, key, input, max) {
+  p = ua(p);
+  let val = input.value;
+  const num = parseInt(val);
+  if (val!==''&&!isNaN(num)) {
+    if (num>max) {
+      input.classList.add('over-max'); input.classList.remove('at-max','filled');
+      setTimeout(()=>{
+        input.value=max; input.classList.remove('over-max'); input.classList.add('at-max'); input.classList.remove('filled');
+        if(state.scores[p]) state.scores[p][key]=String(max);
+        updateCalcRows();
+      },300);
+      return;
+    } else if (num===max) { input.classList.add('at-max'); input.classList.remove('over-max','filled'); }
+    else { input.classList.add('filled'); input.classList.remove('at-max','over-max'); }
+    if (num<0) { input.value=0; val='0'; }
+  } else { input.classList.remove('at-max','over-max','filled'); }
+  if (state.scores[p]) state.scores[p][key]=val;
+  updateCalcRows();
+}
+
+function setCheckbox(p, key, input, max) {
+  p = ua(p);
+  if (state.scores[p]) state.scores[p][key] = input.checked ? String(max) : '';
+  const box=input.nextElementSibling, pts=box.nextElementSibling;
+  box.textContent = input.checked?'✓':'';
+  pts.textContent = input.checked?max+' pts':'0 pts';
+  updateCalcRows();
+}
+
+function updateCalcRows() {
+  document.querySelectorAll('tr.total-row .total-value').forEach((el,i)=>el.textContent=calcUpper(state.players[i]));
+  document.querySelectorAll('tr.calc-row:not(.total-row):not(.bonus-row) td.score-cell span').forEach((el,i)=>{
+    const m=Math.max(0,63-calcUpper(state.players[i]));
+    el.className=m===0?'missing-ok':'missing-need'; el.textContent=m===0?'✓ VALMIS!':'-'+m;
+  });
+  document.querySelectorAll('tr.bonus-row td.score-cell').forEach((el,i)=>{
+    const b=calcBonus(state.players[i]);
+    el.innerHTML=b?`<span class="bonus-yes">+50</span>`:`<span class="bonus-no">—</span>`;
+  });
+  document.querySelectorAll('.grand-total-value').forEach((el,i)=>el.textContent=calcGrand(state.players[i]));
+}
+
+function addPlayer() {
+  if(state.players.length>=MAX_PLAYERS) return;
+  const n=`PELAAJA ${state.players.length+1}`;
+  state.players.push(n); state.scores[n]={};
+  ALL_ROWS.forEach(r=>state.scores[n][r.key]='');
+  renderTable();
+}
+
+function removePlayer() {
+  if(state.players.length<=MIN_PLAYERS) return;
+  delete state.scores[state.players.pop()]; renderTable();
+}
+
+function rename(old, nw) {
+  nw=(nw.trim().toUpperCase())||old;
+  const i=state.players.indexOf(old);
+  if(i===-1||old===nw) return;
+  if(state.players.includes(nw)) nw+='_2';
+  state.players[i]=nw; state.scores[nw]=state.scores[old]; delete state.scores[old];
+  renderTable();
+}
+
+// localStorage high scores
+function loadHS() { try { return JSON.parse(localStorage.getItem(HS_KEY))||[]; } catch { return []; } }
+function saveHS(l) { try { localStorage.setItem(HS_KEY,JSON.stringify(l)); } catch {} }
+
+function renderHS() {
+  const list = loadHS();
+  const body = document.getElementById('hsBody');
+  if (!list.length) { body.innerHTML=`<p class="hs-empty">Ei tuloksia vielä — pelaa peli loppuun tallentaaksesi!</p>`; return; }
+  const classes=['hs-gold','hs-silver','hs-bronze'], medals=['🥇','🥈','🥉'];
+  body.innerHTML=`<div class="hs-list">${list.map((e,i)=>`
+    <div class="hs-entry ${classes[i]||''}">
+      <span class="hs-rank">${medals[i]||(i+1)+'.'}</span>
+      <span class="hs-name">${esc(e.name)}</span>
+      <span class="hs-score">${e.score}</span>
+      <span class="hs-date">${e.date||''}</span>
+    </div>`).join('')}</div>`;
+}
+
+function addToHS(name, score) {
+  let list=loadHS();
+  list.push({name,score,date:new Date().toLocaleDateString('fi-FI')});
+  list.sort((a,b)=>b.score-a.score);
+  saveHS(list.slice(0,MAX_HS));
+}
+
+function clearHighScores() {
+  if(!confirm('Tyhjennä koko high scores -lista?')) return;
+  saveHS([]); renderHS();
+}
+
+function showFinishModal() {
+  const sorted=[...state.players].map(p=>({name:p,score:calcGrand(p)})).sort((a,b)=>b.score-a.score);
+  const top=loadHS()[0]?.score||0;
+  document.getElementById('finishResults').innerHTML=sorted.map((e,i)=>`
+    <div class="finish-entry ${i===0?'winner':''}">
+      <span class="finish-player">${i===0?'🏆 ':''}${esc(e.name)}</span>
+      <span class="finish-score">${e.score}${e.score>top?`<span class="new-record-badge">NEW RECORD!</span>`:''}</span>
+    </div>`).join('');
+  showModal('modalFinish');
+}
+
+function saveAndReset() {
+  state.players.forEach(p=>addToHS(p,calcGrand(p)));
+  renderHS();
+  hideModal('modalFinish');
+  state.players.forEach(p=>{ state.scores[p]={}; ALL_ROWS.forEach(r=>state.scores[p][r.key]=''); });
+  renderTable();
+}
+
+function confirmReset() {
+  state.players.forEach(p=>{ state.scores[p]={}; ALL_ROWS.forEach(r=>state.scores[p][r.key]=''); });
+  hideModal('modalReset'); renderTable();
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+
+document.querySelectorAll('.modal-overlay').forEach(el=>
+  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('show'); }));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay.show').forEach(el=>el.classList.remove('show'));
+});
+
+const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ea  = s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const ua  = s=>String(s).replace(/\\'/g,"'").replace(/\\\\/g,'\\');
+
+initScores();
+renderTable();
+renderHS();
+</script>
+</body>
+</html>
