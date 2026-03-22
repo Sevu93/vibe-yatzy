@@ -449,7 +449,10 @@
     <h2>🏆 ALL-TIME HIGH SCORES</h2>
     <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
       <span class="hs-note">Tallennettu selaimeen</span>
+      <button class="btn" style="font-size:0.65rem;padding:0.35rem 0.8rem;background:var(--blue);color:white" onclick="backupHS()">⬇ BACKUP</button>
+      <button class="btn" style="font-size:0.65rem;padding:0.35rem 0.8rem;background:var(--lime)" onclick="document.getElementById('restoreInput').click()">⬆ RESTORE</button>
       <button class="btn btn-danger" style="font-size:0.65rem;padding:0.35rem 0.8rem" onclick="clearHighScores()">✕ TYHJENNÄ</button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreHS(this)">
     </div>
   </div>
   <div class="hs-body" id="hsBody"></div>
@@ -700,6 +703,54 @@ function addToHS(name, score) {
 function clearHighScores() {
   if(!confirm('Tyhjennä koko high scores -lista?')) return;
   saveHS([]); renderHS();
+}
+
+function backupHS() {
+  const list = loadHS();
+  const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `yatzy-highscores-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restoreHS(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) throw new Error('Invalid format');
+
+      // Validate each entry has name + score
+      const valid = imported.filter(e => e.name && typeof e.score === 'number');
+      if (!valid.length) { alert('Tiedostossa ei ole kelvollisia tuloksia.'); return; }
+
+      const choice = confirm(
+        `Löydettiin ${valid.length} tulosta.\n\nOK = Yhdistä olemassa oleviin\nPeruuta = Korvaa kaikki`
+      );
+
+      let final;
+      if (choice) {
+        // Merge and dedupe, keep top 10
+        final = [...loadHS(), ...valid];
+      } else {
+        final = valid;
+      }
+
+      final.sort((a,b) => b.score - a.score);
+      saveHS(final.slice(0, MAX_HS));
+      renderHS();
+      alert(`✓ Tuotu ${valid.length} tulosta!`);
+    } catch {
+      alert('Virhe: tiedosto ei ole kelvollinen Yatzy-backup.');
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // reset so same file can be picked again
 }
 
 // ---- FINISH ----
